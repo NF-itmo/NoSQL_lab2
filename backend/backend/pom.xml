@@ -64,6 +64,13 @@
             <scope>compile</scope>
         </dependency>
 
+        <!-- Source: https://mvnrepository.com/artifact/com.google.cloud/google-cloud-firestore -->
+        <dependency>
+            <groupId>com.google.cloud</groupId>
+            <artifactId>google-cloud-firestore</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
         <!-- JWT Processing Module -->
         <dependency>
             <groupId>org</groupId>
@@ -94,4 +101,16 @@
             </plugin>
         </plugins>
     </build>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>libraries-bom</artifactId>
+                <version>26.91.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 </project>
