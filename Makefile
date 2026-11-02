@@ -10,8 +10,6 @@ FRONTEND_PATH=.  # это плохо, очень плохо. как и всё ч
 
 DEV_COMPOSE=docker-compose.dev.yaml
 PROD_COMPOSE=docker-compose.yaml
-ETCD_TEST_ENDPOINTS=http://localhost:2379,http://localhost:22379,http://localhost:32379
-
 all: prod
 
 build-backend:
@@ -34,9 +32,3 @@ prod: build-backend build-frontend
 
 stop:
 	docker stack rm $(STACK_NAME)
-
-test-etcd-conflicts:
-	docker compose -f $(DEV_COMPOSE) up -d --wait etcd1 etcd2 etcd3
-	cd $(BACKEND_PATH) && \
-		ETCD_ENDPOINTS=$(ETCD_TEST_ENDPOINTS) \
-		./mvnw -q -pl backend -Dtest=EtcdConcurrentWritesIT test

@@ -1,7 +1,10 @@
 package org.repository;
 
+import com.google.cloud.firestore.DocumentReference;
+import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.Pipeline;
+import com.google.cloud.firestore.Transaction;
 import com.google.cloud.firestore.pipeline.stages.Search;
 import lombok.extern.slf4j.Slf4j;
 import org.models.Book;
@@ -110,6 +113,18 @@ public class BooksFirestoreRepository {
                 .document(String.valueOf(book.getId()))
                 .set(book);
     }
+
+    public long incrementViews(Integer id) {
+        try {
+            return firestore.runTransaction(transaction ->
+                            incrementViews(transaction, id)
+                    ).get();
+        } catch (InterruptedException | ExecutionException exception) {
+            log.error("Error while incrementing views for book {}", id, exception);
+            throw new RuntimeException(exception);
+        }
+    }
+
     public void delete(Integer id) {
         firestore.collection(collectionName)
                 .document(String.valueOf(id))
@@ -138,5 +153,16 @@ public class BooksFirestoreRepository {
             log.error("Error while releasing book {}", id, e);
             throw new RuntimeException(e);
         }
+    }
+
+    private long incrementViews(Transaction transaction, Integer id) throws InterruptedException, ExecutionException {
+        final DocumentReference bookDocument = firestore.collection(collectionName).document(String.valueOf(id));
+        final DocumentSnapshot snapshot = transaction.get(bookDocument).get();
+
+        final long currentViews = Optional.ofNullable(snapshot.getLong("views")).orElse(0L);
+        final long nextViews = currentViews + 1;
+
+        transaction.update(bookDocument, "views", nextViews);
+        return nextViews;
     }
 }
