@@ -3,7 +3,10 @@ package org.controllers;
 import jakarta.validation.Valid;
 import org.controllers.DTO.CreateBookRequest;
 import org.controllers.DTO.GetBookResponse;
+import org.controllers.DTO.internal.CreateBookCharacteristicsRequest;
+import org.controllers.DTO.internal.GetBookCharacteristicsResponse;
 import org.models.Book;
+import org.models.BookCharacteristics;
 import org.services.BooksService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,10 +39,11 @@ public class BooksController {
                 .id(request.getId())
                 .title(request.getTitle())
                 .author(request.getAuthor())
-                .genre(request.getGenre())
+                .locationId(request.getLocationId())
                 .description(request.getDescription())
                 .available(true)
                 .views(0L)
+                .characteristics(toModel(request.getCharacteristics()))
                 .build());
 
         return ResponseEntity.ok(
@@ -93,10 +97,34 @@ public class BooksController {
                 book.getId(),
                 book.getTitle(),
                 book.getAuthor(),
-                book.getGenre(),
+                book.getLocationId(),
+                book.getLocation(),
                 book.getDescription(),
                 book.getAvailable(),
-                book.getViews()
+                book.getViews(),
+                toResponse(book.getCharacteristics())
+        );
+    }
+
+    private BookCharacteristics toModel(CreateBookCharacteristicsRequest request) {
+        return BookCharacteristics.builder()
+                .genre(request.getGenre())
+                .publisher(request.getPublisher())
+                .publicationYear(request.getPublicationYear())
+                .pageCount(request.getPageCount())
+                .build();
+    }
+
+    private GetBookCharacteristicsResponse toResponse(BookCharacteristics characteristics) {
+        if (characteristics == null) {
+            return null;
+        }
+
+        return new GetBookCharacteristicsResponse(
+                characteristics.getGenre(),
+                characteristics.getPublisher(),
+                characteristics.getPublicationYear(),
+                characteristics.getPageCount()
         );
     }
 }
