@@ -63,12 +63,14 @@ public class BooksService {
 
     public Book create(Book book) {
         booksRepository.create(book);
+        booksSearchCacheRepository.invalidate();
         return book;
     }
 
     public void delete(Integer bookId) {
         getById(bookId);
         booksRepository.delete(bookId);
+        booksSearchCacheRepository.invalidate();
     }
 
     public void release(Integer bookId) {
