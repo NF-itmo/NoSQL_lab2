@@ -1,5 +1,7 @@
 package org.models;
 
+import com.google.cloud.firestore.annotation.DocumentId;
+import com.google.cloud.spring.data.firestore.Document;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,7 +13,9 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Document(collectionName = "orders")
 public class Order {
+    @DocumentId
     private Integer id;
     private Integer bookId;
     private Instant expiresAt;

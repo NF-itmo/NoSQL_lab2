@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.exceptions.ConflictException;
 import org.exceptions.NotFoundException;
 import org.models.Order;
-import org.repository.OrdersRepository;
+import org.repository.OrdersFirestoreRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,16 +12,16 @@ import java.util.List;
 @Service
 @Slf4j
 public class OrdersService {
-    private final OrdersRepository ordersRepository;
+    private final OrdersFirestoreRepository ordersRepository;
 
     public OrdersService(
-            OrdersRepository ordersRepository
+            OrdersFirestoreRepository ordersRepository
     ) {
         this.ordersRepository = ordersRepository;
     }
 
     public Order getById(Integer orderId) {
-        return ordersRepository.getById(orderId).join().orElseThrow(
+        return ordersRepository.getById(orderId).orElseThrow(
                 () -> {
                     log.info("Order not found {}", orderId);
                     return new NotFoundException("Order not found");
@@ -30,16 +30,16 @@ public class OrdersService {
     }
 
     public List<Order> getAll() {
-        return ordersRepository.getAll().join();
+        return ordersRepository.getAll();
     }
 
     public void cancel(Integer orderId) {
-        ordersRepository.deleteById(orderId).join();
+        ordersRepository.deleteById(orderId);
     }
 
     public void confirm(Integer orderId) {
         final Order order = getById(orderId);
-        final boolean confirmed = ordersRepository.confirm(orderId, order.getBookId()).join();
+        final boolean confirmed = ordersRepository.confirm(orderId, order.getBookId());
 
         if (!confirmed) {
             throw new ConflictException("Book is unavailable or order has expired");
@@ -47,8 +47,6 @@ public class OrdersService {
     }
 
     public Order create(Integer bookId) {
-        return ordersRepository.createOrderByBookId(
-                bookId
-        ).join();
+        return ordersRepository.createOrderByBookId(bookId);
     }
 }
