@@ -1,11 +1,10 @@
 package org.services;
 
-import org.exceptions.ConflictException;
 import org.exceptions.NotFoundException;
 import org.models.Book;
+import org.repository.BooksFirestoreRepository;
 import org.repository.BooksSearchCacheRepository;
 import org.repository.BooksViewsRepository;
-import org.repository.BooksRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,10 +14,10 @@ import java.util.Optional;
 public class BooksService {
     private final BooksViewsRepository booksViewsRepository;
     private final BooksSearchCacheRepository booksSearchCacheRepository;
-    private final BooksRepository booksRepository;
+    private final BooksFirestoreRepository booksRepository;
 
     public BooksService(
-            BooksRepository booksRepository,
+            BooksFirestoreRepository booksRepository,
             BooksViewsRepository booksViewsRepository,
             BooksSearchCacheRepository booksSearchCacheRepository
     ) {
