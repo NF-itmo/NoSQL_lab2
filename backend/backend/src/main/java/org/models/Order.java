@@ -18,5 +18,8 @@ public class Order {
     @DocumentId
     private Integer id;
     private Integer bookId;
+    private String bookTitle;
+    private Instant createdAt;
     private Instant expiresAt;
+    private OrderState status;
 }

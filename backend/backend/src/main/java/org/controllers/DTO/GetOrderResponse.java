@@ -18,5 +18,9 @@ public class GetOrderResponse {
     private Integer bookId;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
+    private Instant createdAt;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Instant expiresAt;
+    private String status;
 }
