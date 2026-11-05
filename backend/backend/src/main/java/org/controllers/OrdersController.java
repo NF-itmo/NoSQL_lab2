@@ -135,7 +135,7 @@ public class OrdersController {
                 order.getBookId(),
                 order.getCreatedAt(),
                 order.getExpiresAt(),
-                order.getStatus().name()
+                order.getStatus().getValue().name()
         );
     }
 }

@@ -21,5 +21,5 @@ public class Order {
     private String bookTitle;
     private Instant createdAt;
     private Instant expiresAt;
-    private OrderState status;
+    private OrderStatus status;
 }
