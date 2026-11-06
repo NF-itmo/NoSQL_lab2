@@ -64,7 +64,7 @@ public class OrderStatusStructureMigration implements ApplicationRunner {
                     final Timestamp changedAt = getLastStatusChange(order);
                     batch.update(
                             order.getReference(),
-                            Map.of("status", Map.of(
+                            Map.of("statusObject", Map.of(
                                     "value", status,
                                     "changedAt", changedAt.toDate()
                             )),

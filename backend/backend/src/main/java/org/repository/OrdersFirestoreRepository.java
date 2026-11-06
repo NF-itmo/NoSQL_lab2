@@ -103,7 +103,7 @@ public class OrdersFirestoreRepository {
             if (status != null) {
                 filters.add(Filter.or(
                         Filter.equalTo("status", status.name()),
-                        Filter.equalTo("status.value", status.name())
+                        Filter.equalTo("statusObject.value", status.name())
                 ));
             }
             if (createdAfter != null) {
@@ -349,13 +349,13 @@ public class OrdersFirestoreRepository {
             OrderState status
     ) {
         final Instant now = Instant.now();
-        if (orderSnapshot.get("status") instanceof String) {
-            transaction.update(orderDocument, "status", status.name());
-        } else {
+        if (orderSnapshot.contains("statusObject")) {
             transaction.update(orderDocument, Map.of(
-                    "status.value", status.name(),
-                    "status.changedAt", Date.from(now)
+                    "statusObject.value", status.name(),
+                    "statusObject.changedAt", Date.from(now)
             ));
+        } else {
+            transaction.update(orderDocument, "status", status.name());
         }
         orderStatusRepository.createLog(
                 transaction,
@@ -404,16 +404,16 @@ public class OrdersFirestoreRepository {
     }
 
     private OrderState getStatus(DocumentSnapshot snapshot) {
-        final Object status = snapshot.get("status");
-        if (status instanceof String stringStatus) {
-            return OrderState.valueOf(stringStatus);
+        final String statusObject = snapshot.getString("statusObject.value");
+        if (statusObject != null) {
+            return OrderState.valueOf(statusObject);
         }
 
-        return OrderState.valueOf(Objects.requireNonNull(snapshot.getString("status.value")));
+        return OrderState.valueOf(Objects.requireNonNull(snapshot.getString("status")));
     }
 
     private Instant getStatusChangedAt(DocumentSnapshot snapshot, Timestamp createdAt) {
-        final Timestamp changedAt = snapshot.getTimestamp("status.changedAt");
+        final Timestamp changedAt = snapshot.getTimestamp("statusObject.changedAt");
         return (changedAt == null ? Objects.requireNonNull(createdAt) : changedAt)
                 .toDate()
                 .toInstant();
