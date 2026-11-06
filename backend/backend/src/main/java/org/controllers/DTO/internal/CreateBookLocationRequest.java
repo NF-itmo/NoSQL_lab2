@@ -1,11 +1,11 @@
-package org.controllers.DTO;
+package org.controllers.DTO.internal;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 
 @Getter
-public class UpdateLocationRequest {
+public class CreateBookLocationRequest {
     @NotNull(message = "Hall should be specified")
     @Positive(message = "Hall should be positive")
     private Integer hall;

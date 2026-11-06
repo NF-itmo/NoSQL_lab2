@@ -1,5 +1,3 @@
-import type { Location } from "@/05-models/location";
-
 export type BookCharacteristics = {
   genre?: string;
   publisher?: string;
@@ -7,12 +5,17 @@ export type BookCharacteristics = {
   pageCount?: number;
 };
 
+export type BookLocation = {
+  hall: number;
+  rack: number;
+  shelf: number;
+};
+
 export type Book = {
   id: number;
   title: string;
   author: string;
-  locationId: string;
-  location?: Location;
+  location: BookLocation;
   description: string;
   available: boolean;
   views: number;
@@ -26,4 +29,4 @@ export type BookFilters = {
   available?: boolean;
 };
 
-export type CreateBookRequest = Omit<Book, "available" | "views" | "location">;
+export type CreateBookRequest = Omit<Book, "available" | "views">;

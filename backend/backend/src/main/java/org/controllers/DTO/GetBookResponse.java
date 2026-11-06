@@ -15,7 +15,6 @@ public class GetBookResponse {
     private Integer id;
     private String title;
     private String author;
-    private String locationId;
     private Location location;
     private String description;
     private Boolean available;

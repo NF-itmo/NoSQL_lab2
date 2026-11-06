@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Transient;
 
 @Data
 @Builder
@@ -17,8 +16,7 @@ public class Book {
 
     private String title;
     private String author;
-    private String locationId;
-    @Transient private Location location;
+    private Location location;
     private String description;
     private Boolean available;
     private Long views;

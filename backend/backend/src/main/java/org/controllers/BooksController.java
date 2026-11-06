@@ -4,9 +4,11 @@ import jakarta.validation.Valid;
 import org.controllers.DTO.CreateBookRequest;
 import org.controllers.DTO.GetBookResponse;
 import org.controllers.DTO.internal.CreateBookCharacteristicsRequest;
+import org.controllers.DTO.internal.CreateBookLocationRequest;
 import org.controllers.DTO.internal.GetBookCharacteristicsResponse;
 import org.models.Book;
 import org.models.BookCharacteristics;
+import org.models.Location;
 import org.services.BooksService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -39,7 +41,7 @@ public class BooksController {
                 .id(request.getId())
                 .title(request.getTitle())
                 .author(request.getAuthor())
-                .locationId(request.getLocationId())
+                .location(toModel(request.getLocation()))
                 .description(request.getDescription())
                 .available(true)
                 .views(0L)
@@ -97,7 +99,6 @@ public class BooksController {
                 book.getId(),
                 book.getTitle(),
                 book.getAuthor(),
-                book.getLocationId(),
                 book.getLocation(),
                 book.getDescription(),
                 book.getAvailable(),
@@ -112,6 +113,14 @@ public class BooksController {
                 .publisher(request.getPublisher())
                 .publicationYear(request.getPublicationYear())
                 .pageCount(request.getPageCount())
+                .build();
+    }
+
+    private Location toModel(CreateBookLocationRequest request) {
+        return Location.builder()
+                .hall(request.getHall())
+                .rack(request.getRack())
+                .shelf(request.getShelf())
                 .build();
     }
 

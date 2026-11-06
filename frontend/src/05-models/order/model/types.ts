@@ -1,11 +1,11 @@
-import type { Location } from "@/05-models/location";
+import type { BookLocation } from "@/05-models/book";
 
 export type OrderState = "PENDING" | "IN_PROGRESS" | "DONE" | "ABORTED";
 
 export type Order = {
   id: number;
   bookId: number;
-  bookLocation?: Location;
+  bookLocation?: BookLocation;
   createdAt: string;
   expiresAt: string;
   status: OrderState;

@@ -164,7 +164,6 @@ public class OrdersFirestoreRepository {
                         "bookId", order.getBookId(),
                         "bookTitle", order.getBookTitle(),
                         "bookLocation", Map.of(
-                                "id", order.getBookLocation().getId(),
                                 "hall", order.getBookLocation().getHall(),
                                 "rack", order.getBookLocation().getRack(),
                                 "shelf", order.getBookLocation().getShelf()
@@ -382,19 +381,12 @@ public class OrdersFirestoreRepository {
                 throw new IllegalArgumentException("Book not found");
             }
 
-            final String locationId = Objects.requireNonNull(book.getString("locationId"));
-            final DocumentSnapshot location = firestore.collection("locations").document(locationId).get().get();
-            if (!location.exists()) {
-                throw new IllegalArgumentException("Book location not found");
-            }
-
             return new BookOrderDetails(
                     Objects.requireNonNull(book.getString("title")),
                     Location.builder()
-                            .id(location.getId())
-                            .hall(Objects.requireNonNull(location.getLong("hall")).intValue())
-                            .rack(Objects.requireNonNull(location.getLong("rack")).intValue())
-                            .shelf(Objects.requireNonNull(location.getLong("shelf")).intValue())
+                            .hall(Objects.requireNonNull(book.getLong("location.hall")).intValue())
+                            .rack(Objects.requireNonNull(book.getLong("location.rack")).intValue())
+                            .shelf(Objects.requireNonNull(book.getLong("location.shelf")).intValue())
                             .build()
             );
         } catch (InterruptedException | ExecutionException exception) {
@@ -425,7 +417,6 @@ public class OrdersFirestoreRepository {
         }
 
         return Location.builder()
-                .id(snapshot.getString("bookLocation.id"))
                 .hall(Objects.requireNonNull(snapshot.getLong("bookLocation.hall")).intValue())
                 .rack(Objects.requireNonNull(snapshot.getLong("bookLocation.rack")).intValue())
                 .shelf(Objects.requireNonNull(snapshot.getLong("bookLocation.shelf")).intValue())

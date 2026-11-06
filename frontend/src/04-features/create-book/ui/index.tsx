@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { addBook, createBook } from "@/05-models/book";
-import { createLocation } from "@/05-models/location";
 import { useErrorNotify } from "@/06-shared/lib/errorNotifier";
 import { PopupButton, PopupInput, PopupTextarea, PopupWindow } from "@/06-shared/ui/popups";
 import styles from "./index.module.css";
@@ -60,16 +59,15 @@ export const CreateBook = () => {
     }
 
     try {
-      const createdLocation = await createLocation({
-        hall: location[0],
-        rack: location[1],
-        shelf: location[2],
-      });
       const book = await createBook({
         id: bookId,
         title: title.trim(),
         author: author.trim(),
-        locationId: createdLocation.id,
+        location: {
+          hall: location[0],
+          rack: location[1],
+          shelf: location[2],
+        },
         description: description.trim(),
         characteristics: {
           genre: genre.trim() || undefined,
