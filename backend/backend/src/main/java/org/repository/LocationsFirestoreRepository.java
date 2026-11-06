@@ -1,6 +1,7 @@
 package org.repository;
 
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.QuerySnapshot;
 import lombok.extern.slf4j.Slf4j;
 import org.models.Location;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,17 +26,30 @@ public class LocationsFirestoreRepository {
         this.collectionName = collectionName;
     }
 
-    public Location create(Location location) {
-        location.setId(UUID.randomUUID().toString());
-
+    public Location getOrCreate(Location location) {
         try {
-            firestore.collection(collectionName)
-                    .document(location.getId())
-                    .create(location)
-                    .get();
-            return location;
+            return firestore.runTransaction(transaction -> {
+                final QuerySnapshot locations = transaction.get(
+                        firestore.collection(collectionName)
+                                .whereEqualTo("hall", location.getHall())
+                                .whereEqualTo("rack", location.getRack())
+                                .whereEqualTo("shelf", location.getShelf())
+                                .limit(1)
+                ).get();
+
+                if (!locations.isEmpty()) {
+                    return locations.getDocuments().get(0).toObject(Location.class);
+                }
+
+                location.setId(UUID.randomUUID().toString());
+                transaction.create(
+                        firestore.collection(collectionName).document(location.getId()),
+                        location
+                );
+                return location;
+            }).get();
         } catch (InterruptedException | ExecutionException exception) {
-            log.error("Error while creating location {}", location.getId(), exception);
+            log.error("Error while creating location", exception);
             throw new RuntimeException(exception);
         }
     }
@@ -47,6 +61,7 @@ public class LocationsFirestoreRepository {
                 return Optional.empty();
             }
 
+            location.setId(id);
             document.set(location).get();
             return Optional.of(location);
         } catch (InterruptedException | ExecutionException exception) {

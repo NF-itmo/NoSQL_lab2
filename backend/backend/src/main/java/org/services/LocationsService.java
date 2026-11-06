@@ -23,7 +23,7 @@ public class LocationsService {
     }
 
     public Location create(Integer hall, Integer rack, Integer shelf) {
-        return locationsRepository.create(Location.builder()
+        return locationsRepository.getOrCreate(Location.builder()
                 .hall(hall)
                 .rack(rack)
                 .shelf(shelf)
