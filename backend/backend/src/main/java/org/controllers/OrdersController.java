@@ -133,6 +133,7 @@ public class OrdersController {
         return new GetOrderResponse(
                 order.getId(),
                 order.getBookId(),
+                order.getBookLocation(),
                 order.getCreatedAt(),
                 order.getExpiresAt(),
                 order.getStatus().getValue().name()

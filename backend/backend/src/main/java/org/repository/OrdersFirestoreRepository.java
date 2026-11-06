@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.models.Order;
 import org.models.OrderState;
 import org.models.OrderStatus;
+import org.models.Location;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
@@ -143,11 +144,12 @@ public class OrdersFirestoreRepository {
 
     public Order createOrderByBookId(Integer bookId) {
         final Instant now = Instant.now();
-        final String bookTitle = getBookTitle(bookId);
+        final BookOrderDetails book = getBookDetails(bookId);
         final Order order = Order.builder()
                 .id(bookId)
                 .bookId(bookId)
-                .bookTitle(bookTitle)
+                .bookTitle(book.title())
+                .bookLocation(book.location())
                 .createdAt(now)
                 .expiresAt(now.plusSeconds(orderTtlSeconds))
                 .status(OrderStatus.builder()
@@ -161,6 +163,12 @@ public class OrdersFirestoreRepository {
                 transaction.create(orderDocument(order.getId()), Map.of(
                         "bookId", order.getBookId(),
                         "bookTitle", order.getBookTitle(),
+                        "bookLocation", Map.of(
+                                "id", order.getBookLocation().getId(),
+                                "hall", order.getBookLocation().getHall(),
+                                "rack", order.getBookLocation().getRack(),
+                                "shelf", order.getBookLocation().getShelf()
+                        ),
                         "createdAt", Date.from(order.getCreatedAt()),
                         "expiresAt", Date.from(order.getExpiresAt()),
                         "status", order.getStatus().getValue().name()
@@ -322,6 +330,7 @@ public class OrdersFirestoreRepository {
                 .id(Integer.parseInt(snapshot.getId()))
                 .bookId(getBookId(snapshot))
                 .bookTitle(getBookTitle(snapshot))
+                .bookLocation(getBookLocation(snapshot))
                 .createdAt(Objects.requireNonNull(createdAt).toDate().toInstant())
                 .expiresAt(Objects.requireNonNull(expiresAt).toDate().toInstant())
                 .status(OrderStatus.builder()
@@ -340,7 +349,7 @@ public class OrdersFirestoreRepository {
             OrderState status
     ) {
         final Instant now = Instant.now();
-        if (hasStringStatus(orderSnapshot)) {
+        if (orderSnapshot.get("status") instanceof String) {
             transaction.update(orderDocument, "status", status.name());
         } else {
             transaction.update(orderDocument, Map.of(
@@ -366,14 +375,28 @@ public class OrdersFirestoreRepository {
         return Objects.requireNonNull(orderSnapshot.getString("bookTitle"));
     }
 
-    private String getBookTitle(Integer bookId) {
+    private BookOrderDetails getBookDetails(Integer bookId) {
         try {
             final DocumentSnapshot book = bookDocument(bookId).get().get();
             if (!book.exists()) {
                 throw new IllegalArgumentException("Book not found");
             }
 
-            return Objects.requireNonNull(book.getString("title"));
+            final String locationId = Objects.requireNonNull(book.getString("locationId"));
+            final DocumentSnapshot location = firestore.collection("locations").document(locationId).get().get();
+            if (!location.exists()) {
+                throw new IllegalArgumentException("Book location not found");
+            }
+
+            return new BookOrderDetails(
+                    Objects.requireNonNull(book.getString("title")),
+                    Location.builder()
+                            .id(location.getId())
+                            .hall(Objects.requireNonNull(location.getLong("hall")).intValue())
+                            .rack(Objects.requireNonNull(location.getLong("rack")).intValue())
+                            .shelf(Objects.requireNonNull(location.getLong("shelf")).intValue())
+                            .build()
+            );
         } catch (InterruptedException | ExecutionException exception) {
             log.error("Error while receiving book {}", bookId, exception);
             throw new RuntimeException(exception);
@@ -396,7 +419,18 @@ public class OrdersFirestoreRepository {
                 .toInstant();
     }
 
-    private boolean hasStringStatus(DocumentSnapshot snapshot) {
-        return snapshot.get("status") instanceof String;
+    private Location getBookLocation(DocumentSnapshot snapshot) {
+        if (!snapshot.contains("bookLocation")) {
+            return null;
+        }
+
+        return Location.builder()
+                .id(snapshot.getString("bookLocation.id"))
+                .hall(Objects.requireNonNull(snapshot.getLong("bookLocation.hall")).intValue())
+                .rack(Objects.requireNonNull(snapshot.getLong("bookLocation.rack")).intValue())
+                .shelf(Objects.requireNonNull(snapshot.getLong("bookLocation.shelf")).intValue())
+                .build();
     }
+
+    private record BookOrderDetails(String title, Location location) {}
 }

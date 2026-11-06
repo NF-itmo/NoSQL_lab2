@@ -17,6 +17,7 @@ public class Order {
     private Integer id;
     private Integer bookId;
     private String bookTitle;
+    private Location bookLocation;
     private Instant createdAt;
     private Instant expiresAt;
     private OrderStatus status;
