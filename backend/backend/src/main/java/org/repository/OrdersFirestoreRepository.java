@@ -3,6 +3,7 @@ package org.repository;
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
+import com.google.cloud.firestore.Filter;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.Query;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -96,16 +98,23 @@ public class OrdersFirestoreRepository {
         deleteExpired();
 
         try {
-            Query query = firestore.collection(ordersCollectionName);
-
+            final List<Filter> filters = new ArrayList<>();
             if (status != null) {
-                query = query.whereEqualTo("status.value", status.name());
+                filters.add(Filter.or(
+                        Filter.equalTo("status", status.name()),
+                        Filter.equalTo("status.value", status.name())
+                ));
             }
             if (createdAfter != null) {
-                query = query.whereGreaterThanOrEqualTo("createdAt", Date.from(createdAfter));
+                filters.add(Filter.greaterThanOrEqualTo("createdAt", Date.from(createdAfter)));
             }
             if (createdBefore != null) {
-                query = query.whereLessThanOrEqualTo("createdAt", Date.from(createdBefore));
+                filters.add(Filter.lessThanOrEqualTo("createdAt", Date.from(createdBefore)));
+            }
+
+            Query query = firestore.collection(ordersCollectionName);
+            if (!filters.isEmpty()) {
+                query = query.where(Filter.and(filters.toArray(Filter[]::new)));
             }
 
             return query.orderBy("createdAt", Query.Direction.DESCENDING)
@@ -154,10 +163,7 @@ public class OrdersFirestoreRepository {
                         "bookTitle", order.getBookTitle(),
                         "createdAt", Date.from(order.getCreatedAt()),
                         "expiresAt", Date.from(order.getExpiresAt()),
-                        "status", Map.of(
-                                "value", order.getStatus().getValue().name(),
-                                "changedAt", Date.from(order.getStatus().getChangedAt())
-                        )
+                        "status", order.getStatus().getValue().name()
                 ));
                 orderStatusRepository.createLog(
                         transaction,
@@ -195,6 +201,7 @@ public class OrdersFirestoreRepository {
                 setStatus(
                         transaction,
                         orderDocument,
+                        orderSnapshot,
                         bookId,
                         getBookTitle(orderSnapshot),
                         OrderState.IN_PROGRESS
@@ -309,7 +316,7 @@ public class OrdersFirestoreRepository {
     private Order mapOrder(DocumentSnapshot snapshot) {
         final Timestamp expiresAt = snapshot.getTimestamp("expiresAt");
         final Timestamp createdAt = snapshot.getTimestamp("createdAt");
-        final String status = snapshot.getString("status.value");
+        final OrderState status = getStatus(snapshot);
 
         return Order.builder()
                 .id(Integer.parseInt(snapshot.getId()))
@@ -318,9 +325,8 @@ public class OrdersFirestoreRepository {
                 .createdAt(Objects.requireNonNull(createdAt).toDate().toInstant())
                 .expiresAt(Objects.requireNonNull(expiresAt).toDate().toInstant())
                 .status(OrderStatus.builder()
-                        .value(OrderState.valueOf(Objects.requireNonNull(status)))
-                        .changedAt(Objects.requireNonNull(snapshot.getTimestamp("status.changedAt"))
-                                .toDate().toInstant())
+                        .value(status)
+                        .changedAt(getStatusChangedAt(snapshot, createdAt))
                         .build())
                 .build();
     }
@@ -328,15 +334,20 @@ public class OrdersFirestoreRepository {
     private void setStatus(
             Transaction transaction,
             DocumentReference orderDocument,
+            DocumentSnapshot orderSnapshot,
             Integer bookId,
             String bookTitle,
             OrderState status
     ) {
         final Instant now = Instant.now();
-        transaction.update(orderDocument, Map.of(
-                "status.value", status.name(),
-                "status.changedAt", Date.from(now)
-        ));
+        if (hasStringStatus(orderSnapshot)) {
+            transaction.update(orderDocument, "status", status.name());
+        } else {
+            transaction.update(orderDocument, Map.of(
+                    "status.value", status.name(),
+                    "status.changedAt", Date.from(now)
+            ));
+        }
         orderStatusRepository.createLog(
                 transaction,
                 orderDocument,
@@ -370,6 +381,22 @@ public class OrdersFirestoreRepository {
     }
 
     private OrderState getStatus(DocumentSnapshot snapshot) {
+        final Object status = snapshot.get("status");
+        if (status instanceof String stringStatus) {
+            return OrderState.valueOf(stringStatus);
+        }
+
         return OrderState.valueOf(Objects.requireNonNull(snapshot.getString("status.value")));
+    }
+
+    private Instant getStatusChangedAt(DocumentSnapshot snapshot, Timestamp createdAt) {
+        final Timestamp changedAt = snapshot.getTimestamp("status.changedAt");
+        return (changedAt == null ? Objects.requireNonNull(createdAt) : changedAt)
+                .toDate()
+                .toInstant();
+    }
+
+    private boolean hasStringStatus(DocumentSnapshot snapshot) {
+        return snapshot.get("status") instanceof String;
     }
 }

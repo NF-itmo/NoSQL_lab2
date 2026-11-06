@@ -32,3 +32,7 @@ prod: build-backend build-frontend
 
 stop:
 	docker stack rm $(STACK_NAME)
+
+migrate-firestore: build-backend
+	docker compose -f $(DEV_COMPOSE) run --rm backend \
+		java -jar backend-0.0.1.jar --spring.profiles.active=firestore-migration
