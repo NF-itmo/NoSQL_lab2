@@ -1,6 +1,5 @@
 package org.models;
 
-import com.google.cloud.firestore.annotation.DocumentId;
 import com.google.cloud.spring.data.firestore.Document;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +13,6 @@ import org.springframework.data.annotation.Transient;
 @AllArgsConstructor
 @Document(collectionName = "Books")
 public class Book {
-    @DocumentId
     private Integer id;
 
     private String title;

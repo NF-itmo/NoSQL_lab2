@@ -5,7 +5,9 @@ import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.Query;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.Transaction;
+import com.google.cloud.firestore.WriteBatch;
 import lombok.extern.slf4j.Slf4j;
 import org.models.Order;
 import org.models.OrderState;
@@ -53,7 +55,12 @@ public class OrdersFirestoreRepository {
             }
 
             final Order order = mapOrder(snapshot);
-            return order.getExpiresAt().isAfter(Instant.now()) ? Optional.of(order) : Optional.empty();
+            if (order.getExpiresAt().isAfter(Instant.now())) {
+                return Optional.of(order);
+            }
+
+            deleteById(orderId);
+            return Optional.empty();
         } catch (InterruptedException | ExecutionException exception) {
             log.error("Error while receiving order {}", orderId, exception);
             throw new RuntimeException(exception);
@@ -61,6 +68,8 @@ public class OrdersFirestoreRepository {
     }
 
     public List<Order> getAll() {
+        deleteExpired();
+
         try {
             return firestore.collection(ordersCollectionName)
                     .whereGreaterThan("expiresAt", Timestamp.now())
@@ -84,6 +93,8 @@ public class OrdersFirestoreRepository {
             int start,
             int limit
     ) {
+        deleteExpired();
+
         try {
             Query query = firestore.collection(ordersCollectionName);
 
@@ -209,13 +220,16 @@ public class OrdersFirestoreRepository {
                 }
 
                 transaction.update(bookDocument, "available", false);
-                setStatus(
+                final Instant now = Instant.now();
+                orderStatusRepository.createLog(
                         transaction,
                         orderDocument,
                         bookId,
                         getBookTitle(orderSnapshot),
-                        OrderState.DONE
+                        OrderState.DONE,
+                        now
                 );
+                transaction.delete(orderDocument);
                 return true;
             });
     }
@@ -234,15 +248,41 @@ public class OrdersFirestoreRepository {
                     return false;
                 }
 
-                setStatus(
+                orderStatusRepository.createLog(
                         transaction,
                         orderDocument,
                         getBookId(orderSnapshot),
                         getBookTitle(orderSnapshot),
-                        OrderState.ABORTED
+                        OrderState.ABORTED,
+                        Instant.now()
                 );
+                transaction.delete(orderDocument);
                 return true;
             });
+    }
+
+    private void deleteExpired() {
+        try {
+            while (true) {
+                final List<QueryDocumentSnapshot> expiredOrders = firestore.collection(ordersCollectionName)
+                        .whereLessThanOrEqualTo("expiresAt", Timestamp.now())
+                        .limit(500)
+                        .get()
+                        .get()
+                        .getDocuments();
+
+                if (expiredOrders.isEmpty()) {
+                    return;
+                }
+
+                final WriteBatch batch = firestore.batch();
+                expiredOrders.forEach(snapshot -> batch.delete(snapshot.getReference()));
+                batch.commit().get();
+            }
+        } catch (InterruptedException | ExecutionException exception) {
+            log.error("Error while deleting expired orders", exception);
+            throw new RuntimeException(exception);
+        }
     }
 
     private boolean runTransaction(
