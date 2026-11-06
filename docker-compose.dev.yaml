@@ -28,7 +28,14 @@ services:
     deploy:
       restart_policy:
         condition: on-failure
+    configs:
+      - source: firestore-config
+        target: /app/config/firestore.json
+        mode: 0444
     environment:
+      FIRESTORE_PROJECT_ID: nosql-lab2-33ab6
+      FIRESTORE_SECRET_PATH: /app/config/firestore.json
+      FIRESTORE_SCOPES: https://www.googleapis.com/auth/datastore
       POSTGRES_URL: postgresql://postgres:5432/db
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -137,3 +144,7 @@ networks:
   postgres_net:
   etcd_net:
   web_server_net:
+
+configs:
+  firestore-config:
+    file: ./.dev/firestore.json
