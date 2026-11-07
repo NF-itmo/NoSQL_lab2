@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { getOrders } from "../api/orders-api";
+import { getOrders, searchOrders } from "../api/orders-api";
 import type { Order } from "./types";
 
 let orders: Order[] = [];
@@ -24,6 +24,11 @@ const scheduleExpiration = (order: Order) => {
   const currentTimer = expirationTimers.get(order.id);
   if (currentTimer) {
     clearTimeout(currentTimer);
+    expirationTimers.delete(order.id);
+  }
+
+  if (order.status !== "PENDING") {
+    return;
   }
 
   const delay = Math.max(0, new Date(order.expiresAt).getTime() - Date.now());
@@ -49,6 +54,19 @@ export const initializeOrders = (): Promise<void> => {
   return initialization;
 };
 
+export const loadOrders = async (filters: {
+  status?: Order["status"];
+  createdAfter?: string;
+  createdBefore?: string;
+}): Promise<void> => {
+  const loadedOrders = await searchOrders(filters);
+  expirationTimers.forEach(clearTimeout);
+  expirationTimers.clear();
+  orders = loadedOrders;
+  orders.forEach(scheduleExpiration);
+  notify();
+};
+
 export const addOrder = (order: Order) => {
   orders = [...orders.filter((item) => item.id !== order.id), order];
   scheduleExpiration(order);
@@ -63,5 +81,14 @@ export const removeOrder = (orderId: number) => {
   }
 
   orders = orders.filter((order) => order.id !== orderId);
+  notify();
+};
+
+export const setOrderStatus = (orderId: number, status: Order["status"]) => {
+  orders = orders.map((order) => order.id === orderId ? { ...order, status } : order);
+  const order = orders.find((item) => item.id === orderId);
+  if (order) {
+    scheduleExpiration(order);
+  }
   notify();
 };

@@ -22,7 +22,7 @@ public class UserRepository {
         );
     }
 
-    @Transactional
+    @Transactional(transactionManager = "jpaTransactionManager")
     public void create(User user){
         entityManager.persist(user);
     }

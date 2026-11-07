@@ -7,6 +7,7 @@ type props = {
   setInput: (data: string) => void
   onEnter?: () => void
   autoFocus?: boolean
+  optional?: boolean
 }
 
 export const PopupInput = (
@@ -15,7 +16,8 @@ export const PopupInput = (
     value,
     setInput,
     onEnter,
-    autoFocus = false
+    autoFocus = false,
+    optional = false
   } : props
 ) => {
   const id = useId();
@@ -37,7 +39,9 @@ export const PopupInput = (
         onKeyDown={handleKeyDown}
         autoFocus={autoFocus}
       ></input>
-      <label className={styles.inputLabel} htmlFor={id}>{name}</label>
+      <label className={styles.inputLabel} htmlFor={id}>
+        {name}{optional && <span className={styles.optional}> (необязательно)</span>}
+      </label>
     </div>
   )
 }

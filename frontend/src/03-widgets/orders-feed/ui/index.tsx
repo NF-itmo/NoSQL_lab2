@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { initializeOrders, useOrders } from "@/05-models/order";
+import { initializeOrders, loadOrders, type OrderState, useOrders } from "@/05-models/order";
 import { useErrorNotify } from "@/06-shared/lib/errorNotifier";
 import { CreateOrder } from "@/04-features/create-order";
 import { ShowOrderItem } from "@/04-features/show-order-item";
@@ -11,6 +11,9 @@ export const OrdersFeed = () => {
   const orders = useOrders();
   const [page, setPage] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [status, setStatus] = useState<OrderState | "">("");
+  const [createdAfter, setCreatedAfter] = useState("");
+  const [createdBefore, setCreatedBefore] = useState("");
   const showError = useErrorNotify();
 
   useEffect(() => {
@@ -18,6 +21,15 @@ export const OrdersFeed = () => {
       .catch(showError)
       .finally(() => setIsLoading(false));
   }, []);
+
+  const search = () => {
+    setIsLoading(true);
+    loadOrders({
+      status: status || undefined,
+      createdAfter: createdAfter ? new Date(createdAfter).toISOString() : undefined,
+      createdBefore: createdBefore ? new Date(createdBefore).toISOString() : undefined,
+    }).catch(showError).finally(() => setIsLoading(false));
+  };
 
   const pagesCount = Math.ceil(orders.length / ORDERS_PER_PAGE);
   const currentPage = Math.min(page, Math.max(pagesCount - 1, 0));
@@ -33,6 +45,19 @@ export const OrdersFeed = () => {
       <div className={styles.header}>
         <h1 className={styles.title}>Заявки</h1>
         <CreateOrder/>
+      </div>
+
+      <div className={styles.filters}>
+        <select value={status} onChange={(event) => setStatus(event.target.value as OrderState | "")}>
+          <option value="">Все статусы</option>
+          <option value="PENDING">Ожидает подтверждения</option>
+          <option value="IN_PROGRESS">Готовится к выдаче</option>
+          <option value="DONE">Выдана</option>
+          <option value="ABORTED">Отменена</option>
+        </select>
+        <input type="datetime-local" value={createdAfter} onChange={(event) => setCreatedAfter(event.target.value)} />
+        <input type="datetime-local" value={createdBefore} onChange={(event) => setCreatedBefore(event.target.value)} />
+        <button onClick={search}>Найти</button>
       </div>
 
       <div className={styles.content}>

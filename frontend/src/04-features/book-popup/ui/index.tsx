@@ -67,7 +67,13 @@ export const BookPopup = ({ book, onClose }: Props) => {
   return (
     <PopupWindow name={book.title} onClose={onClose}>
       <p>Автор: {book.author}</p>
-      <p>Жанр: {book.genre}</p>
+      {book.characteristics.genre && <p>Жанр: {book.characteristics.genre}</p>}
+      {book.characteristics.publisher && <p>Издатель: {book.characteristics.publisher}</p>}
+      {book.characteristics.publicationYear && <p>Год издания: {book.characteristics.publicationYear}</p>}
+      {book.characteristics.pageCount && <p>Страниц: {book.characteristics.pageCount}</p>}
+      {book.location && (
+        <p>Расположение: зал {book.location.hall}, стеллаж {book.location.rack}, полка {book.location.shelf}</p>
+      )}
       <p>Статус: {book.available ? "доступна" : "выдана"}</p>
       <p>Просмотры: {book.views}</p>
       <div className={styles.description}>

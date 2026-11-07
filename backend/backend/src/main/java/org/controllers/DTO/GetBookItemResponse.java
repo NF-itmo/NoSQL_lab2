@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.models.Location;
 
 @Data
 @Builder
@@ -13,6 +14,6 @@ public class GetBookItemResponse {
     private Integer id;
     private String title;
     private String author;
-    private String genre;
+    private Location location;
     private Boolean available;
 }

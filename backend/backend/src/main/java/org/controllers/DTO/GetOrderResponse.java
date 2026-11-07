@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.models.Location;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -16,7 +17,12 @@ import java.time.OffsetDateTime;
 public class GetOrderResponse {
     private Integer id;
     private Integer bookId;
+    private Location bookLocation;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    private Instant createdAt;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Instant expiresAt;
+    private String status;
 }

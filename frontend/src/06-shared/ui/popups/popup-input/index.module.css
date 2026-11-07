@@ -37,7 +37,11 @@
 
     padding: 0 5px 0px 5px;
     margin: 0px;
+    white-space: nowrap;
 
     transition: 0.04s ease-in;
   }
-    
+    .optional {
+      color: hsl(0, 0%, 52%);
+    }
+

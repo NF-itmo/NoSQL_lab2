@@ -87,11 +87,11 @@ public class BooksSearchCacheRepository {
         });
     }
 
-    public CompletableFuture<Void> invalidate() {
+    public void invalidate() {
         final ByteSequence prefix = ByteSequence.from(SEARCH_CACHE_KEY_PREFIX, UTF_8);
         final DeleteOption option = DeleteOption.builder().isPrefix(true).build();
 
-        return kvClient.delete(prefix, option).thenApply(response -> null);
+        kvClient.delete(prefix, option).thenApply(response -> null);
     }
 
     private ByteSequence searchKey(

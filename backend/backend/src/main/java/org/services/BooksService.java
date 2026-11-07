@@ -1,11 +1,9 @@
 package org.services;
 
-import org.exceptions.ConflictException;
 import org.exceptions.NotFoundException;
 import org.models.Book;
+import org.repository.BooksFirestoreRepository;
 import org.repository.BooksSearchCacheRepository;
-import org.repository.BooksViewsRepository;
-import org.repository.BooksRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,17 +11,13 @@ import java.util.Optional;
 
 @Service
 public class BooksService {
-    private final BooksViewsRepository booksViewsRepository;
     private final BooksSearchCacheRepository booksSearchCacheRepository;
-    private final BooksRepository booksRepository;
-
+    private final BooksFirestoreRepository booksRepository;
     public BooksService(
-            BooksRepository booksRepository,
-            BooksViewsRepository booksViewsRepository,
+            BooksFirestoreRepository booksRepository,
             BooksSearchCacheRepository booksSearchCacheRepository
     ) {
         this.booksSearchCacheRepository = booksSearchCacheRepository;
-        this.booksViewsRepository = booksViewsRepository;
         this.booksRepository = booksRepository;
     }
 
@@ -57,19 +51,21 @@ public class BooksService {
 
     public Book getDetailsById(Integer bookId) {
         final Book book = getById(bookId);
-        book.setViews(booksViewsRepository.incrementViews(bookId).join());
+        book.setViews(booksRepository.incrementViews(bookId));
 
         return book;
     }
 
     public Book create(Book book) {
         booksRepository.create(book);
+        booksSearchCacheRepository.invalidate();
         return book;
     }
 
     public void delete(Integer bookId) {
         getById(bookId);
         booksRepository.delete(bookId);
+        booksSearchCacheRepository.invalidate();
     }
 
     public void release(Integer bookId) {

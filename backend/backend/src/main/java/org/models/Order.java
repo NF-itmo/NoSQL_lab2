@@ -1,5 +1,6 @@
 package org.models;
 
+import com.google.cloud.spring.data.firestore.Document;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,8 +12,13 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Document(collectionName = "orders")
 public class Order {
     private Integer id;
     private Integer bookId;
+    private String bookTitle;
+    private Location bookLocation;
+    private Instant createdAt;
     private Instant expiresAt;
+    private OrderStatus status;
 }

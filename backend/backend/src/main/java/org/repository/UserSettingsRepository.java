@@ -17,7 +17,7 @@ public class UserSettingsRepository {
         return Optional.ofNullable(entityManager.find(UserSettings.class, username));
     }
 
-    @Transactional
+    @Transactional(transactionManager = "jpaTransactionManager")
     public void save(UserSettings settings) {
         entityManager.merge(settings);
     }
